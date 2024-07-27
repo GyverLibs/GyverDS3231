@@ -1,0 +1,28 @@
+#######################################
+# Syntax Coloring Map For GyverDS3231
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+GyverDS3231	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+updateNow	KEYWORD2
+getTime	KEYWORD2
+setBuildTime	KEYWORD2
+setTime	KEYWORD2
+tick	KEYWORD2
+getTemp	KEYWORD2
+getTempInt	KEYWORD2
+getOffset	KEYWORD2
+setOffset	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
