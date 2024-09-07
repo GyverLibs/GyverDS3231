@@ -19,6 +19,11 @@ class GyverDS3231 : public StampTicker {
         return updateNow();
     }
 
+    // RTC работает корректно (чтение и валидация времени)
+    bool isOK() {
+        return getTime().valid();
+    }
+
     // синхронизировать время с RTC. true при успехе, false при ошибке шины или после сброса питания RTC
     bool updateNow() {
         Datime dt = getTime();
@@ -54,8 +59,6 @@ class GyverDS3231 : public StampTicker {
     // Datime(year, month, day, hour, minute, second)
     bool setTime(Datime dt) {
         if (!_wire || !dt.valid() || dt.isY2K()) return 0;
-        StampTicker::update(dt);
-        _tmr = millis();
 
         dt.updateDays();
         _wire->beginTransmission(_addr);
@@ -69,7 +72,12 @@ class GyverDS3231 : public StampTicker {
         _wire->write(_encodeReg(dt.day));
         _wire->write(_encodeReg(dt.month));
         _wire->write(_encodeReg(dt.year - 2000));
-        return !_wire->endTransmission();
+
+        if (!_wire->endTransmission()) {
+            StampTicker::update(dt);
+            _tmr = millis();
+        }
+        return 0;
     }
 
     // установить время RTC равным локальному времени компиляции прошивки
