@@ -76,6 +76,7 @@ class GyverDS3231 : public StampTicker {
         if (!_wire->endTransmission()) {
             StampTicker::update(dt);
             _tmr = millis();
+            return 1;
         }
         return 0;
     }
