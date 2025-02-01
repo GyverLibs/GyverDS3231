@@ -17,7 +17,7 @@
 Совместима со всеми Arduino платформами (используются Arduino-функции)
 
 ### Зависимости
-- [Stamp](https://github.com/GyverLibs/Stamp)
+- [Stamp](https://github.com/GyverLibs/Stamp) v1.4.0+
 
 ## Содержание
 - [Использование](#usage)
@@ -28,42 +28,35 @@
 <a id="usage"></a>
 
 ## Использование
-Библиотека считает время при помощи millis() и синхронизирует время с RTC по таймеру (по умолчанию каждый час).
+### GyverDS3231Min
+Работа напрямую с RTC и его временем:
 
 ```cpp
-// наследует StampTicker
-
-// передать период синхронизации в секундах, умолч. 1 час
-GyverDS3231(uint16_t syncPrd = 60 * 60);
-
-// запустить и синхронизировать. Можно указать другой драйвер Wire и i2c адрес. Вернёт true при успехе
+// запустить. Можно указать другой драйвер Wire и i2c адрес. Вернёт true при успехе
 bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
 
-// RTC работает корректно (чтение и валидация времени)
+// RTC работает корректно
 bool isOK();
 
-// синхронизировать время с RTC. true при успехе, false при ошибке шины или после сброса питания RTC
-bool updateNow();
+// был сброс питания
+bool isReset();
 
-// прочитать время с RTC для отладки
+// прочитать время RTC
 Datime getTime();
 
-// установить время RTC равным локальному времени компиляции прошивки
-bool setBuildTime();
-
 // установить время RTC:
-// ("hh:mm:ss") или ("yyyy-mm-dd") или ("yyyy-mm-ddThh:mm:ss")
-// (unix)
-// Datime(year, month, day, hour, minute, second)
+bool setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
+
+// установить время RTC: ("hh:mm:ss") / ("yyyy-mm-dd") / ("yyyy-mm-ddThh:mm:ss") / (unix)
 bool setTime(Datime dt);
 
-// тикер, вызывать в loop. Возвращает true каждую секунду, если время синхронизировано
-bool tick();
+// установить время RTC равным времени компиляции прошивки
+bool setBuildTime();
 
-// получить температуру чипа
+// получить температуру чипа float
 float getTemp();
 
-// получить температуру чипа
+// получить температуру чипа int
 int getTempInt();
 
 // получить смещение калибровки (значение * 0.1ppm)
@@ -71,80 +64,141 @@ int8_t getOffset();
 
 // установить смещение калибровки (значение * 0.1ppm)
 bool setOffset(int8_t offset);
+
+// VirtualRTC
+// установить unix время RTC (будет приведено к локальному)
+void setUnix(uint32_t unix);
+
+// получить unix время RTC (GMT+0)
+uint32_t getUnix();
 ```
 
-### Примеры
+### GyverDS3231
+Библиотека считает время при помощи millis() и синхронизирует время с RTC по таймеру. Наследует `GyverDS3231Min` и `StampKeeper`:
+
 ```cpp
-#include <GyverDS3231.h>
-GyverDS3231 ds;
+// установить период синхронизации в секундах
+GyverDS3231(uint16_t syncPrd = 60 * 60);
+
+// установить период синхронизации в секундах
+void setPeriod(uint16_t syncPrd);
+
+// запустить и синхронизировать. Можно указать другой драйвер Wire и i2c адрес. Вернёт true при успехе
+bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
+
+// синхронизировать время с RTC. true при успехе, false при ошибке шины или после сброса питания RTC
+bool updateNow();
+
+// тикер, вызывать в loop. Возвращает true каждую секунду, если время синхронизировано
+bool tick();
+```
+
+## Примеры
+### GyverDS3231Min
+
+```cpp
+#include <GyverDS3231Min.h>
+
+GyverDS3231Min rtc;
 
 void setup() {
-    setStampZone(3);  // указать часовой пояс, если в программе нужен реальный unix
-    // если не нужен - можно не указывать (останется 0)
-
     Serial.begin(115200);
+    Serial.println("start");
+
+    setStampZone(3);  // часовой пояс
+
     Wire.begin();
+    rtc.begin();
 
-    // запустить и синхронизировать время, если возможно
-    ds.begin();
+    Serial.print("OK: ");
+    Serial.println(rtc.isOK());
 
-    // запустить на другом драйвере I2C
-    // ds.begin(&customWire);
+    Serial.print("Reset: ");
+    Serial.println(rtc.isReset());
 
-    // ИЛИ
-    // если старт неудачный (например был сброс питания RTC)
-    // установить время равным времении компиляции
-    // if (!ds.begin()) ds.setBuildTime();
+    // был сброс питания RTC, время некорректное
+    if (rtc.isReset()) {
+        rtc.setBuildTime();     // установить время компиляции прошивки
+        // rtc.setTime(2025, 1, 30, 12, 45, 0); // установить время вручную
+    }
 
-    // установка времени вручную
-    // ds.setTime(123456789ul);                     // unix
-    // ds.setTime(Datime(2024, 7, 27, 17, 6, 30));  // Y.M.D H:M:S
-    
-    // Datime dt;
-    // dt.second = 34;
-    // ...задать дату и время...
-    // и отправить в RTC
-    // ds.setTime(dt);
+    // вывести в Datime
+    Datime dt = rtc.getTime();
+    Serial.println(dt.year);
+    Serial.println(dt.month);
+    Serial.println(dt.day);
+    Serial.println(dt.hour);
+    Serial.println(dt.minute);
+    Serial.println(dt.second);
 }
 
 void loop() {
-    // вызывать тикер в loop
-    // тикер также вернёт true каждую секунду, что удобно для сравнения времени
-    if (ds.tick()) {
-        Serial.println(ds.toString());     // вывод даты и времени строкой
-        Serial.println(ds.dateToString()); // вывод даты строкой
+    // прочитать и вывести время строкой
+    Serial.println(rtc.getTime().toString());
+    delay(1000);
+}
+```
 
-        // можно сравнивать напрямую с unix
-        if (ds >= 12345) { }
-        if (ds == 123456) { }
+### GyverDS3231
 
-        ds.getUnix();  // получить unix секунды
+```cpp
+#include <Arduino.h>
+#include <GyverDS3231.h>
 
-        // парсинг unix на дату и время
-        ds.second();   // секунды
-        ds.minute();   // минуты и так далее
+GyverDS3231 rtc;
 
-        // эффективнее использовать парсер Datime
-        Datime dt(ds);  // ds само конвертируется в Datime
+void setup() {
+    Serial.begin(115200);
+    Serial.println("start");
 
+    setStampZone(3);  // часовой пояс
+
+    Wire.begin();
+    rtc.begin();
+
+    Serial.print("OK: ");
+    Serial.println(rtc.isOK());
+
+    Serial.print("Reset: ");
+    Serial.println(rtc.isReset());
+
+    // был сброс питания RTC, время некорректное
+    if (rtc.isReset()) {
+        rtc.setBuildTime();     // установить время компиляции прошивки
+        // rtc.setTime(2025, 1, 30, 12, 45, 0); // установить время вручную
+    }
+}
+void loop() {
+    // тикер вернёт true каждую секунду в 0 мс секунды, если время синхронизировано
+    if (rtc.tick()) {
+        // вывод даты и времени строкой
+        Serial.print(rtc.toString());  // rtc.timeToString(), rtc.dateToString()
+        Serial.print(':');
+        Serial.println(rtc.ms());  // + миллисекунды текущей секунды. Внутри tick всегда равно 0
+
+        // вывод в Datime
+        Datime dt = rtc;  // или Datime dt(rtc)
         dt.year;
-        dt.month;
-        dt.day;
-        dt.hour;
-        dt.minute;
         dt.second;
+        dt.hour;
         dt.weekDay;
         dt.yearDay;
+        // ... и прочие методы и переменные Datime
 
-        // для автоматизации внутри суток удобно использовать 
-        // секунды с начала суток, daySeconds()
-        ds.daySeconds();
+        // чтение напрямую, медленнее чем вывод в Datime
+        rtc.second();
+        rtc.minute();
+        rtc.year();
+        // ... и прочие методы StampConvert
 
-        // для удобства также есть класс DaySeconds, позволяющий задать время внутри суток
-        DaySeconds dsec(5, 10, 0);  // 5 часов, 10 минут, 0 секунд
+        // сравнение
+        rtc == DaySeconds(12, 35, 0);            // сравнение с DaySeconds (время равно 12:35:00)
+        rtc == 1738237474;                       // сравнение с unix
+        rtc == Datime(2025, 1, 30, 14, 14, 30);  // сравнение с Datime
+    }
 
-        // GyverDS3231 может сравниваться напрямую с DaySeconds
-        if (ds == dsec) { }
+    if (rtc.newSecond()) {
+        // новую секунду можно поймать и здесь
     }
 }
 ```
@@ -153,8 +207,10 @@ void loop() {
 
 ## Версии
 - v1.0
+- v1.1.0 - разделено на два класса, теперь RTC работает на API StampKeeper
 
 <a id="install"></a>
+
 ## Установка
 - Библиотеку можно найти по названию **GyverDS3231** и установить через менеджер библиотек в:
     - Arduino IDE
