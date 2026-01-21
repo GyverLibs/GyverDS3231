@@ -67,7 +67,7 @@ class GyverDS3231Min : public VirtualRTC {
         _wire->write(_encodeReg(dt.minute));
         if (dt.hour > 19) _wire->write((0x2 << 4) | (dt.hour % 20));
         else if (dt.hour > 9) _wire->write((0x1 << 4) | (dt.hour % 10));
-        else Wire.write(dt.hour);
+        else _wire->write(dt.hour);
         _wire->write(dt.weekDay);
         _wire->write(_encodeReg(dt.day));
         _wire->write(_encodeReg(dt.month));
