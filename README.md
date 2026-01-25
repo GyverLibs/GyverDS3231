@@ -17,7 +17,7 @@
 Совместима со всеми Arduino платформами (используются Arduino-функции)
 
 ### Зависимости
-- [Stamp](https://github.com/GyverLibs/Stamp) v1.4.0+
+- [Stamp](https://github.com/GyverLibs/Stamp) v1.5.0+
 
 ## Содержание
 - [Использование](#usage)
@@ -181,8 +181,8 @@ void loop() {
         dt.year;
         dt.second;
         dt.hour;
-        dt.weekDay;
-        dt.yearDay;
+        dt.weekDay();
+        dt.yearDay();
         // ... и прочие методы и переменные Datime
 
         // чтение напрямую, медленнее чем вывод в Datime

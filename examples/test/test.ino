@@ -20,7 +20,7 @@ void setup() {
 
     // был сброс питания RTC, время некорректное
     if (rtc.isReset()) {
-        rtc.setBuildTime();     // установить время компиляции прошивки
+        rtc.setBuildTime();  // установить время компиляции прошивки
         // rtc.setTime(2025, 1, 30, 12, 45, 0); // установить время вручную
     }
 }
@@ -37,8 +37,8 @@ void loop() {
         dt.year;
         dt.second;
         dt.hour;
-        dt.weekDay;
-        dt.yearDay;
+        dt.weekDay();
+        dt.yearDay();
         // ... и прочие методы и переменные Datime
 
         // чтение напрямую, медленнее чем вывод в Datime

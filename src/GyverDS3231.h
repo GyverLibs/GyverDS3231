@@ -5,17 +5,18 @@
 class GyverDS3231 : public GyverDS3231Min, public StampKeeper {
    public:
     // установить период синхронизации в секундах
-    GyverDS3231(uint16_t syncPrd = 60 * 60) {
+    GyverDS3231(uint32_t syncPrd = 60 * 60) {
         setPeriod(syncPrd);
     }
 
     // установить период синхронизации в секундах
-    void setPeriod(uint16_t syncPrd) {
+    void setPeriod(uint32_t syncPrd) {
         _prd = syncPrd * 1000ul;
     }
 
     // запустить и синхронизировать. Можно указать другой драйвер Wire и i2c адрес. Вернёт true при успехе
     bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68) {
+        _tmr = millis();
         if (GyverDS3231Min::begin(wire, addr)) return updateNow();
         return false;
     }
@@ -24,7 +25,7 @@ class GyverDS3231 : public GyverDS3231Min, public StampKeeper {
     bool updateNow() {
         _tmr = millis();
         Datime dt = getTime();
-        if (!dt.valid() || dt.year == 2000) return false;
+        if (!dt.valid() || dt.isY2K()) return false;
 
         StampKeeper::sync(dt.getUnix());
         return true;

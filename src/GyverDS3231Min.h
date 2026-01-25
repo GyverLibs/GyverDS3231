@@ -19,17 +19,17 @@ class GyverDS3231Min : public VirtualRTC {
     }
 
     // RTC работает корректно
-    bool isOK() {
+    bool isOK() const {
         return getTime().valid();
     }
 
     // был сброс питания
-    bool isReset() {
+    bool isReset() const {
         return getTime().year == 2000;
     }
 
     // прочитать время RTC
-    Datime getTime() {
+    Datime getTime() const {
         Datime dt(0, 0, 0, 0, 0, 0);
         if (!_wire) return dt;
 
@@ -37,8 +37,7 @@ class GyverDS3231Min : public VirtualRTC {
         _wire->write(DS_SEC_ADDR);
         if (_wire->endTransmission()) return dt;
 
-        uint8_t n = _wire->requestFrom(_addr, (uint8_t)7);
-        if (n != 7) return dt;
+        if (_wire->requestFrom(_addr, (uint8_t)7) != 7) return dt;
 
         dt.second = _decodeReg(_wire->read());
         dt.minute = _decodeReg(_wire->read());
@@ -47,7 +46,7 @@ class GyverDS3231Min : public VirtualRTC {
         dt.day = _decodeReg(_wire->read());
         dt.month = _decodeReg(_wire->read());
         dt.year = _decodeReg(_wire->read()) + 2000;
-        dt.updateDays();
+        // dt.updateDays();
         return dt;
     }
 
@@ -60,22 +59,24 @@ class GyverDS3231Min : public VirtualRTC {
     bool setTime(Datime dt) {
         if (!_wire || !dt.valid() || dt.isY2K()) return 0;
 
-        dt.updateDays();
+        // dt.updateDays();
         _wire->beginTransmission(_addr);
         _wire->write(DS_SEC_ADDR);
         _wire->write(_encodeReg(dt.second));
         _wire->write(_encodeReg(dt.minute));
+
         if (dt.hour > 19) _wire->write((0x2 << 4) | (dt.hour % 20));
         else if (dt.hour > 9) _wire->write((0x1 << 4) | (dt.hour % 10));
         else _wire->write(dt.hour);
-        _wire->write(dt.weekDay);
+
+        _wire->write(dt.weekDay());
         _wire->write(_encodeReg(dt.day));
         _wire->write(_encodeReg(dt.month));
         _wire->write(_encodeReg(dt.year - 2000));
-        bool end = !_wire->endTransmission();
 
-        if (end) updateNow();
-        return end;
+        bool ok = !_wire->endTransmission();
+        if (ok) updateNow();
+        return ok;
     }
 
     // установить время RTC равным времени компиляции прошивки
@@ -84,24 +85,24 @@ class GyverDS3231Min : public VirtualRTC {
     }
 
     // получить температуру чипа float
-    float getTemp() {
+    float getTemp() const {
         return (_getTempRaw() * 0.25f);
     }
 
     // получить температуру чипа int
-    int getTempInt() {
+    int getTempInt() const {
         return (_getTempRaw() >> 2);
     }
 
     // получить смещение калибровки (значение * 0.1ppm)
-    int8_t getOffset() {
+    int8_t getOffset() const {
         if (!_wire) return 0;
 
         _wire->beginTransmission(_addr);
         _wire->write(DS_OFFS_ADDR);
         if (_wire->endTransmission()) return 0;
 
-        _wire->requestFrom(_addr, (uint8_t)1);
+        if (_wire->requestFrom(_addr, (uint8_t)1) != 1) return 0;
         return _wire->read();
     }
 
@@ -116,12 +117,12 @@ class GyverDS3231Min : public VirtualRTC {
     }
 
     // установить unix время RTC (будет приведено к локальному)
-    void setUnix(uint32_t unix) {
+    void setUnix(uint32_t unix) override {
         setTime(unix);
     }
 
     // получить unix время RTC (GMT+0)
-    uint32_t getUnix() {
+    uint32_t getUnix() override {
         Datime dt = getTime();
         return (dt.valid() && dt.year != 2000) ? dt.getUnix() : 0;
     }
@@ -130,19 +131,19 @@ class GyverDS3231Min : public VirtualRTC {
     virtual bool updateNow() { return 1; }
 
    private:
-    TwoWire* _wire = nullptr;
-    uint8_t _addr;
+    TwoWire* _wire = &Wire;
+    uint8_t _addr = 0x68;
 
-    uint8_t _encodeReg(int8_t data) {
+    uint8_t _encodeReg(int8_t data) const {
         return (((data / 10) << 4) | (data % 10));
     }
-    uint8_t _decodeReg(uint8_t data) {
+    uint8_t _decodeReg(uint8_t data) const {
         return ((data >> 4) * 10 + (data & 0xF));
     }
-    uint8_t _decodeHours(uint8_t data) {
+    uint8_t _decodeHours(uint8_t data) const {
         return (data & 0xF) + ((data & 0x20) ? 20 : ((data & 0x10) ? 10 : 0));
     }
-    int _getTempRaw() {
+    int _getTempRaw() const {
         if (!_wire) return 0;
 
         _wire->beginTransmission(_addr);
