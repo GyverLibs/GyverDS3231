@@ -1,177 +1,245 @@
-This is an automatic translation, may be incorrect in some places. See sources and examples!
+This is an automatic translation and may be incorrect in some places. See the source README and examples for authoritative information.
 
-# Gyverds3231
-Library for working with a real time microcircuit (RTC) DS3231
-- time is considered on the basis of Millis () and synchronized with RTC by timer
-- Built -in second timer for the convenience of automation of processes
-- works on the basis of the library [Stamp] (https://github.com/gyverlibs/stamp)
-- the ability to use the external object wire
+[![latest](https://img.shields.io/github/v/release/GyverLibs/GyverDS3231.svg?color=brightgreen)](https://github.com/GyverLibs/GyverDS3231/releases/latest/download/GyverDS3231.zip)
+[![PIO](https://badges.registry.platformio.org/packages/gyverlibs/library/GyverDS3231.svg)](https://registry.platformio.org/libraries/gyverlibs/GyverDS3231)
+[![Foo](https://img.shields.io/badge/Website-AlexGyver.ru-blue.svg?style=flat-square)](https://alexgyver.ru/)
+[![Foo](https://img.shields.io/badge/%E2%82%BD%24%E2%82%AC%20%D0%9F%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-%D0%B0%D0%B2%D1%82%D0%BE%D1%80%D0%B0-orange.svg?style=flat-square)](https://alexgyver.ru/support_alex/)
+[![Foo](https://img.shields.io/badge/README-ENGLISH-blueviolet.svg?style=flat-square)](https://github-com.translate.goog/GyverLibs/GyverDS3231?_x_tr_sl=ru&_x_tr_tl=en)  
 
-## compatibility
-Compatible with all arduino platforms (used arduino functions)
+[![Foo](https://img.shields.io/badge/ПОДПИСАТЬСЯ-НА%20ОБНОВЛЕНИЯ-brightgreen.svg?style=social&logo=telegram&color=blue)](https://t.me/GyverLibs)
+
+# GyverDS3231
+Real-time chip (RTC) library DS3231
+- Time is counted on the basis of millis() and synchronized with RTC by timer.
+- Built-in second timer for easy process automation
+- Works at the library.[Stamp](https://github.com/GyverLibs/Stamp)
+- Ability to use an external Wire object
+
+### Compatibility
+Compatible with all Arduino platforms (Arduino features are used)
 
 ### Dependencies
-- [Stamp] (https://github.com/gyverlibs/stamp)
+- [Stamp](https://github.com/GyverLibs/Stamp) v1.5.0+
 
-## Content
-- [use] (#usage)
-- [versions] (#varsions)
-- [installation] (# Install)
-- [bugs and feedback] (#fedback)
+## Contents
+- [Use of use](#usage)
+- [Versions](#versions)
+- [Installation](#install)
+- [Bugs and feedback](#feedback)
 
-<a id="usage"> </a>
+<a id="usage"></a>
 
-## Usage
-The library considers time using Millis () and synchronizes the time from RTC by timer (by default every hour).
+## Use of use
+### GyverDS3231Min
+Working directly with RTC and its time:
 
-`` `CPP
-// inherits Stampticker
+```cpp
+// launch. You can specify a different Wire driver and i2c address. It will return true when successful.
+bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
 
-// transfer the period of synchronization in seconds, silence.1 hour
-Gyverds3231 (Uint16_t Syncprd = 60 * 60);
+// RTC is working correctly
+bool isOK();
 
-// Launch and synchronize.You can specify another Wire and I2C driver.Will return True with success
-Bool Begin (Twowire* Wire = & Wire, Uint8_t Addr = 0x68);
+// was feeding off
+bool isReset();
 
-// synchronize time with RTC.True with success, FALSE with a tire error or after resetting RTC power
-Bool updatatenow ();
+// read out
+Datime getTime();
 
-// Read the time with RTC for debugging
-Datime Gettime ();
+// set the RTC time:
+bool setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
 
-// Set the RTC time equal to the local firmware compilation time
-Bool setbuildtime ();
+// set the RTC time: ("hh:mm:ss") / ("yyyy-mm-dd") / ("yyyy-mm-ddThh:mm:ss") / (unix)
+bool setTime(Datime dt);
 
-// set the time RTC:
-// ("hh: mm: ss") or ("yyyy-mm-dd") or ("yyyy-mm-ddthh: mm: ss")
-// (unix)
-// Datime (year, Month, Day, Hour, Minute, Second)
-Bool settime (Datime DT);
+// set the RTC time equal to the firmware compilation time
+bool setBuildTime();
 
-// ticker, call in LOOP.Returns True every second if time is synchronized
-Bool Tick ();
+// get the temperature of the float chip
+float getTemp();
 
-// get the chip temperature
-Float gettemp ();
+// get the temperature of the chip int
+int getTempInt();
 
-// get the chip temperature
-int Gettempint ();
+// receive calibration offset (value * 0.1ppm)
+int8_t getOffset();
 
-// Get a calibration displacement (value * 0.1PPM)
-int8_t getoffset ();
+// set calibration offset (value * 0.1ppm)
+bool setOffset(int8_t offset);
 
-// Set the calibration displacement (value * 0.1PPM)
-Bool Setoffset (Int8_T Offseet);
-`` `
+// VirtualRTC
+// set unix RTC time (to be brought to local)
+void setUnix(uint32_t unix);
 
-### Examples
-`` `CPP
-#include <gyverds3231.h>
-Gyverds3231 ds;
+// Get unix RTC time (GMT+0)
+uint32_t getUnix();
+```
 
-VOID setup () {
-setstampzone (3);// specify a time zone if the program needs a real unix
-// if not needed, you can not specify (remain 0)
+### GyverDS3231
+The library counts time using millis() and synchronizes time with RTC over timer. Inherit.`GyverDS3231Min`and`StampKeeper`:
 
-Serial.Begin (115200);
-Wire.begin ();
+```cpp
+// set the synchronization period in seconds
+GyverDS3231(uint16_t syncPrd = 60 * 60);
 
-// Launch and synchronize time, if possible
-DS.Begin ();
+// set the synchronization period in seconds
+void setPeriod(uint16_t syncPrd);
 
-// Launch on another driver i2c
-// DS.Begin (& Customwire);
+// launch and sync. You can specify a different Wire driver and i2c address. It will return true when successful.
+bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
 
-// OR
-// If the start is unsuccessful (for example, there was a power supply RTC)
-// set time equal to compilation time
-// if (! ds.begin ()) ds.Setbuildtime ();
+// synchronize time with RTC. True at success, false at tire error or after RTC power reset
+bool updateNow();
 
-// Time installation manually
-// ds.Settime (123456789ul);// unix
-// ds.Settime (Datime (2024, 7, 27, 17, 6, 30));// y.m.d h: m: s
+// ticker, call the loop. Returns true every second if time is synchronized
+bool tick();
+```
 
-// Datime DT;
-// dt.second = 34;
-// ... set the date and time ...
-// and send to RTC
-// ds.Settime (DT);
+## Examples
+### GyverDS3231Min
+
+```cpp
+#include <GyverDS3231Min.h>
+
+GyverDS3231Min rtc;
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("start");
+
+    setStampZone(3);  // time-zone
+
+    Wire.begin();
+    rtc.begin();
+
+    Serial.print("OK: ");
+    Serial.println(rtc.isOK());
+
+    Serial.print("Reset: ");
+    Serial.println(rtc.isReset());
+
+    // RTC was powered down, timing was incorrect.
+    if (rtc.isReset()) {
+        rtc.setBuildTime();     // set the firmware compilation time
+        // rtc.setTime(2025, 1, 30, 12, 45, 0); // set the time manually
+    }
+
+    // put out
+    Datime dt = rtc.getTime();
+    Serial.println(dt.year);
+    Serial.println(dt.month);
+    Serial.println(dt.day);
+    Serial.println(dt.hour);
+    Serial.println(dt.minute);
+    Serial.println(dt.second);
 }
 
-VOID loop () {
-// call a ticker in look
-// The ticker will also return True every second, which is convenient for comparing time
-if (ds.tick ()) {
-Serial.println (ds.tostring ());// Date and time withdrawal
-Serial.println (ds.datetostosting ());// Date of dates by lineCranberry
-// can be compared directly with UNIX
-if (ds> = 12345) {}
-if (ds == 123456) {}
-
-ds.getunix ();// Get Unix seconds
-
-// Unix Parsing on date and time
-DS.Second ();// seconds
-ds.minute ();// minutes and so on
-
-// more efficiently use Datime Parser
-Datime DT (DS);// ds itself converts into Datime
-
-dt.year;
-DT.MONTH;
-dt.day;
-DT.Hour;
-dt.minute;
-DT.Second;
-DT.Weekday;
-dt.yearday;
-
-// for automation inside the day, it is convenient to use
-// seconds from the beginning of the day, Dayseconds ()
-DS.DaySeconds ();
-
-// For convenience, there is also a class Dayseconds class that allows you to set time inside the day
-Dayseconds DSEC (5, 10, 0);// 5 hours, 10 minutes, 0 seconds
-
-// gyverds3231 can be compared directly to Dayseconds
-if (ds == dsec) {}
+void loop() {
+    // read out
+    Serial.println(rtc.getTime().toString());
+    delay(1000);
 }
+```
+
+### GyverDS3231
+
+```cpp
+#include <Arduino.h>
+#include <GyverDS3231.h>
+
+GyverDS3231 rtc;
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("start");
+
+    setStampZone(3);  // time-zone
+
+    Wire.begin();
+    rtc.begin();
+
+    Serial.print("OK: ");
+    Serial.println(rtc.isOK());
+
+    Serial.print("Reset: ");
+    Serial.println(rtc.isReset());
+
+    // RTC was powered down, timing was incorrect.
+    if (rtc.isReset()) {
+        rtc.setBuildTime();     // set the firmware compilation time
+        // rtc.setTime(2025, 1, 30, 12, 45, 0); // set the time manually
+    }
 }
-`` `
+void loop() {
+    // The ticker will return true every second in 0 ms of a second if the time is synchronized.
+    if (rtc.tick()) {
+        // lineage
+        Serial.print(rtc.toString());  // rtc.timeToString(), rtc.dateToString()
+        Serial.print(':');
+        Serial.println(rtc.ms());  // + milliseconds of the current second. Inside, the tick is always 0.
 
-<a id="versions"> </a>
+        // deduction
+        Datime dt = rtc;  // or Datime dt(rtc)
+        dt.year;
+        dt.second;
+        dt.hour;
+        dt.weekDay();
+        dt.yearDay();
+        // ... and other Datime methods and variables
 
-## versions
-- V1.0
+        // Reading directly slower than output in Datime
+        rtc.second();
+        rtc.minute();
+        rtc.year();
+        // ... and other methods of StampConvert
 
-<a id="install"> </a>
+        // comparison
+        rtc == DaySeconds(12, 35, 0);            // Compared to DaySeconds (time is 12:35:00)
+        rtc == 1738237474;                       // comparison
+        rtc == Datime(2025, 1, 30, 14, 14, 30);  // comparison
+    }
+
+    if (rtc.newSecond()) {
+        // You can catch another second here.
+    }
+}
+```
+
+<a id="versions"></a>
+
+## Versions
+- v1.0
+- v1.1.0 – divided into two classes, now RTC runs on the StampKeeper API
+
+<a id="install"></a>
+
 ## Installation
-- The library can be found by the name ** gyverds3231 ** and installed through the library manager in:
-- Arduino ide
-- Arduino ide v2
-- Platformio
-- [download the library] (https://github.com/gyverlibs/gyverds3231/archive/refs/heads/main.zip). Zip archive for manual installation:
-- unpack and put in * C: \ Program Files (X86) \ Arduino \ Libraries * (Windows X64)
-- unpack and put in * C: \ Program Files \ Arduino \ Libraries * (Windows X32)
-- unpack and put in *documents/arduino/libraries/ *
-- (Arduino id) Automatic installation from. Zip: * sketch/connect the library/add .Zip library ... * and specify downloaded archive
-- Read more detailed instructions for installing libraries [here] (https://alexgyver.ru/arduino-first/#%D0%A3%D1%81%D1%82%D0%B0%BD%D0%BE%BE%BE%BED0%B2%D0%BA%D0%B0_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA)
+- The library can be found under the name **GyverDS3231** and installed through the library manager in:
+    - Arduino IDE
+    - Arduino IDE v2
+    - PlatformIO
+- [Download the library](https://github.com/GyverLibs/GyverDS3231/archive/refs/heads/main.zip).zip archive for manual installation:
+    - Unpack and put in *C:\Program Files (x86)\Arduino\libraries* (Windows x64)
+    - Unpack and put in *C:\Program Files\Arduino\libraries* (Windows x32)
+    - Unpack and put in *Documents/Arduino/libraries/ *
+    - (Arduino IDE) Automatic installation from .zip: *Sketch/Connect library/Add .ZIP library...* and specify downloaded archive
+- Read more detailed instructions for installing libraries[here](https://alexgyver.ru/arduino-first/#%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA)
 ### Update
-- I recommend always updating the library: errors and bugs are corrected in the new versions, as well as optimization and new features are added
-- through the IDE library manager: find the library how to install and click "update"
-- Manually: ** remove the folder with the old version **, and then put a new one in its place.“Replacement” cannot be done: sometimes in new versions, files that remain when replacing are deleted and can lead to errors!
+- I recommend always updating the library: new versions fix errors and bugs, as well as optimize and add new features.
+- Through the library manager IDE: find the library as when installing and click "Update"
+- Manually: **Delete the folder with the old version** and then put the new one in its place. “Replacement” can not be done: sometimes new versions delete files that will remain when replaced and can lead to errors!
 
-<a id="feedback"> </a>
+<a id="feedback"></a>
 
-## bugs and feedback
-Create ** Issue ** when you find the bugs, and better immediately write to the mail [alex@alexgyver.ru] (mailto: alex@alexgyver.ru)
-The library is open for refinement and your ** pull Request ** 'ow!
+## Bugs and feedback
+If you find bugs, create **Issue**, or better write to the mail immediately.[alex@alexgyver.ru](mailto:alex@alexgyver.ru)  
+The library is open for revision and your **Pull Requests*!
 
-When reporting about bugs or incorrect work of the library, it is necessary to indicate:
-- The version of the library
-- What is MK used
+When reporting bugs or incorrect work of the library, it is necessary to specify:
+- Library version
+- What is used by the IC
 - SDK version (for ESP)
-- version of Arduino ide
-- whether the built -in examples work correctly, in which the functions and designs are used, leading to a bug in your code
-- what code has been loaded, what work was expected from it and how it works in reality
-- Ideally, attach the minimum code in which the bug is observed.Not a canvas of a thousand lines, but a minimum code
+- Arduino IDE version
+- Are embedded examples that use features and designs that cause bugs in your code working correctly?
+- What code was downloaded, what work was expected from it and how it works in reality
+- Ideally, attach the minimum code in which the bug is observed. Not a canvas of a thousand lines, but a minimum code.
