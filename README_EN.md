@@ -80,16 +80,19 @@ The library counts time using millis() and synchronizes time with RTC over timer
 
 ```cpp
 // set the synchronization period in seconds
-GyverDS3231(uint16_t syncPrd = 60 * 60);
+GyverDS3231(uint32_t syncPrd = 60 * 60);
 
 // set the synchronization period in seconds
-void setPeriod(uint16_t syncPrd);
+void setPeriod(uint32_t syncPrd);
 
 // launch and sync. You can specify a different Wire driver and i2c address. It will return true when successful.
 bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
 
 // synchronize time with RTC. True at success, false at tire error or after RTC power reset
 bool updateNow();
+
+// get current unix from synchronized StampKeeper
+uint32_t getUnix() const;
 
 // ticker, call the loop. Returns true every second if time is synchronized
 bool tick();
@@ -180,9 +183,9 @@ void loop() {
 
         // deduction
         Datime dt = rtc;  // or Datime dt(rtc)
-        dt.year;
-        dt.second;
-        dt.hour;
+        Serial.println(dt.year);
+        Serial.println(dt.second);
+        Serial.println(dt.hour);
         dt.weekDay();
         dt.yearDay();
         // ... and other Datime methods and variables
@@ -195,7 +198,7 @@ void loop() {
 
         // comparison
         rtc == DaySeconds(12, 35, 0);            // Compared to DaySeconds (time is 12:35:00)
-        rtc == 1738237474;                       // comparison
+        rtc == 1738237474ul;                     // comparison with unix
         rtc == Datime(2025, 1, 30, 14, 14, 30);  // comparison
     }
 

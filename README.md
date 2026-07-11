@@ -78,16 +78,19 @@ uint32_t getUnix();
 
 ```cpp
 // установить период синхронизации в секундах
-GyverDS3231(uint16_t syncPrd = 60 * 60);
+GyverDS3231(uint32_t syncPrd = 60 * 60);
 
 // установить период синхронизации в секундах
-void setPeriod(uint16_t syncPrd);
+void setPeriod(uint32_t syncPrd);
 
 // запустить и синхронизировать. Можно указать другой драйвер Wire и i2c адрес. Вернёт true при успехе
 bool begin(TwoWire* wire = &Wire, uint8_t addr = 0x68);
 
 // синхронизировать время с RTC. true при успехе, false при ошибке шины или после сброса питания RTC
 bool updateNow();
+
+// получить текущий unix из синхронизированного StampKeeper
+uint32_t getUnix() const;
 
 // тикер, вызывать в loop. Возвращает true каждую секунду, если время синхронизировано
 bool tick();
@@ -178,9 +181,9 @@ void loop() {
 
         // вывод в Datime
         Datime dt = rtc;  // или Datime dt(rtc)
-        dt.year;
-        dt.second;
-        dt.hour;
+        Serial.println(dt.year);
+        Serial.println(dt.second);
+        Serial.println(dt.hour);
         dt.weekDay();
         dt.yearDay();
         // ... и прочие методы и переменные Datime
@@ -193,7 +196,7 @@ void loop() {
 
         // сравнение
         rtc == DaySeconds(12, 35, 0);            // сравнение с DaySeconds (время равно 12:35:00)
-        rtc == 1738237474;                       // сравнение с unix
+        rtc == 1738237474ul;                     // сравнение с unix
         rtc == Datime(2025, 1, 30, 14, 14, 30);  // сравнение с Datime
     }
 

@@ -31,6 +31,10 @@ class GyverDS3231 : public GyverDS3231Min, public StampKeeper {
         return true;
     }
 
+    uint32_t getUnix() const override {
+        return StampKeeper::getUnix();
+    }
+
     // тикер, вызывать в loop. Возвращает true каждую секунду, если время синхронизировано
     bool tick() {
         if (millis() - _tmr >= _prd) updateNow();

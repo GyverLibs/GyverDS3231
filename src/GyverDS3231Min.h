@@ -44,7 +44,7 @@ class GyverDS3231Min : public VirtualRTC {
         dt.hour = _decodeHours(_wire->read());
         _wire->read();  // weekday
         dt.day = _decodeReg(_wire->read());
-        dt.month = _decodeReg(_wire->read());
+        dt.month = _decodeReg(_wire->read() & 0x1F);
         dt.year = _decodeReg(_wire->read()) + 2000;
         // dt.updateDays();
         return dt;
@@ -65,9 +65,7 @@ class GyverDS3231Min : public VirtualRTC {
         _wire->write(_encodeReg(dt.second));
         _wire->write(_encodeReg(dt.minute));
 
-        if (dt.hour > 19) _wire->write((0x2 << 4) | (dt.hour % 20));
-        else if (dt.hour > 9) _wire->write((0x1 << 4) | (dt.hour % 10));
-        else _wire->write(dt.hour);
+        _wire->write(_encodeReg(dt.hour));
 
         _wire->write(dt.weekDay());
         _wire->write(_encodeReg(dt.day));
@@ -141,6 +139,10 @@ class GyverDS3231Min : public VirtualRTC {
         return ((data >> 4) * 10 + (data & 0xF));
     }
     uint8_t _decodeHours(uint8_t data) const {
+        if (data & 0x40) {
+            uint8_t h = _decodeReg(data & 0x1F);
+            return (data & 0x20) ? ((h == 12) ? 12 : h + 12) : ((h == 12) ? 0 : h);
+        }
         return (data & 0xF) + ((data & 0x20) ? 20 : ((data & 0x10) ? 10 : 0));
     }
     int _getTempRaw() const {
@@ -150,7 +152,7 @@ class GyverDS3231Min : public VirtualRTC {
         _wire->write(DS_TEMP_ADDR);
         if (_wire->endTransmission()) return 0;
 
-        _wire->requestFrom(_addr, (uint8_t)2);
+        if (_wire->requestFrom(_addr, (uint8_t)2) != 2) return 0;
         return ((int8_t)_wire->read() << 2) + (_wire->read() >> 6);
     }
 };
